@@ -11,11 +11,13 @@ import {
   Settings,
   Home,
   Zap,
+  Database,
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Home },
+  { name: 'Data Management', href: '/data', icon: Database },
   { name: 'LinkedIn Campaigns', href: '/linkedin', icon: Users },
   { name: 'Email Campaigns', href: '/email', icon: Mail },
   { name: 'Webinars', href: '/webinars', icon: Video },

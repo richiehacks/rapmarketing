@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@/contexts/ThemeProvider';
 import { Layout } from '@/components/layout/Layout';
 import { Dashboard } from '@/pages/Dashboard';
+import { DataManagement } from '@/pages/DataManagement';
 import { LinkedInCampaigns } from '@/pages/LinkedInCampaigns';
 import { EmailCampaigns } from '@/pages/EmailCampaigns';
 import { Webinars } from '@/pages/Webinars';
@@ -18,6 +19,7 @@ function App() {
         <Layout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/data" element={<DataManagement />} />
             <Route path="/linkedin" element={<LinkedInCampaigns />} />
             <Route path="/email" element={<EmailCampaigns />} />
             <Route path="/webinars" element={<Webinars />} />
