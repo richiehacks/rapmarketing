@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFileUpload, UploadProgress } from '@/hooks/useFileUpload';
+import { CampaignSummaryForm } from './CampaignSummaryForm';
 
 interface FileUploadZoneProps {
   campaignType: string;
@@ -23,9 +24,13 @@ interface FileUploadZoneProps {
 export function FileUploadZone({ campaignType, onUploadComplete }: FileUploadZoneProps) {
   const { uploadFiles, uploadProgress, isUploading, clearProgress } = useFileUpload();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadedDatasetId, setUploadedDatasetId] = useState<string | null>(null);
+  const [showSummaryForm, setShowSummaryForm] = useState(false);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setSelectedFiles(acceptedFiles);
+    setShowSummaryForm(false);
+    setUploadedDatasetId(null);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -43,7 +48,11 @@ export function FileUploadZone({ campaignType, onUploadComplete }: FileUploadZon
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
     
-    await uploadFiles(selectedFiles, campaignType);
+    const result = await uploadFiles(selectedFiles, campaignType);
+    if (result && result.length > 0) {
+      setUploadedDatasetId(result[0].datasetId);
+      setShowSummaryForm(true);
+    }
     setSelectedFiles([]);
     onUploadComplete?.();
   };
@@ -66,15 +75,10 @@ export function FileUploadZone({ campaignType, onUploadComplete }: FileUploadZon
     }
   };
 
-  const getStatusColor = (status: UploadProgress['status']) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-500';
-      case 'error':
-        return 'bg-red-500';
-      default:
-        return 'bg-blue-500';
-    }
+  const handleSummaryAdded = () => {
+    setShowSummaryForm(false);
+    setUploadedDatasetId(null);
+    onUploadComplete?.();
   };
 
   return (
@@ -94,10 +98,10 @@ export function FileUploadZone({ campaignType, onUploadComplete }: FileUploadZon
             <input {...getInputProps()} />
             <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">
-              {isDragActive ? 'Drop files here' : 'Drop your files here or click to browse'}
+              {isDragActive ? 'Drop files here' : 'Drop your Excel/CSV files here or click to browse'}
             </h3>
             <p className="text-muted-foreground mb-4">
-              Supports CSV, Excel (XLSX/XLS), and JSON files up to 10MB
+              Upload your campaign data to generate real-time reports and insights
             </p>
             <div className="flex items-center justify-center space-x-4">
               <Button type="button" variant="outline">
@@ -209,6 +213,15 @@ export function FileUploadZone({ campaignType, onUploadComplete }: FileUploadZon
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Campaign Summary Form */}
+      {showSummaryForm && uploadedDatasetId && (
+        <CampaignSummaryForm
+          datasetId={uploadedDatasetId}
+          campaignType={campaignType}
+          onSummaryAdded={handleSummaryAdded}
+        />
       )}
     </div>
   );

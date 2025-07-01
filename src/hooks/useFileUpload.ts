@@ -10,8 +10,13 @@ export interface UploadProgress {
   error?: string;
 }
 
+export interface UploadResult {
+  datasetId: string;
+  fileName: string;
+}
+
 export interface UseFileUploadReturn {
-  uploadFiles: (files: File[], campaignType: string) => Promise<void>;
+  uploadFiles: (files: File[], campaignType: string) => Promise<UploadResult[] | null>;
   uploadProgress: UploadProgress[];
   isUploading: boolean;
   clearProgress: () => void;
@@ -31,8 +36,8 @@ export const useFileUpload = (): UseFileUploadReturn => {
     );
   }, []);
 
-  const uploadFiles = useCallback(async (files: File[], campaignType: string) => {
-    if (files.length === 0) return;
+  const uploadFiles = useCallback(async (files: File[], campaignType: string): Promise<UploadResult[] | null> => {
+    if (files.length === 0) return null;
 
     setIsUploading(true);
     
@@ -47,14 +52,23 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
     try {
       // Process files in parallel
-      await Promise.all(
+      const results = await Promise.all(
         files.map(file => processFile(file, campaignType, updateProgress))
       );
       
-      toast.success(`Successfully uploaded ${files.length} file(s)`);
+      const successfulUploads = results.filter(result => result !== null) as UploadResult[];
+      
+      if (successfulUploads.length > 0) {
+        toast.success(`Successfully uploaded ${successfulUploads.length} file(s)`);
+        return successfulUploads;
+      } else {
+        toast.error('All files failed to upload');
+        return null;
+      }
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Some files failed to upload');
+      return null;
     } finally {
       setIsUploading(false);
     }
@@ -76,7 +90,7 @@ const processFile = async (
   file: File,
   campaignType: string,
   updateProgress: (fileName: string, updates: Partial<UploadProgress>) => void
-) => {
+): Promise<UploadResult | null> => {
   try {
     // Step 1: Parse file
     updateProgress(file.name, { progress: 20, status: 'processing' });
@@ -132,13 +146,18 @@ const processFile = async (
     // Step 6: Complete
     updateProgress(file.name, { progress: 100, status: 'completed' });
     
+    return {
+      datasetId: dataset.id,
+      fileName: file.name,
+    };
+    
   } catch (error) {
     console.error(`Error processing ${file.name}:`, error);
     updateProgress(file.name, { 
       status: 'error', 
       error: error instanceof Error ? error.message : 'Unknown error' 
     });
-    throw error;
+    return null;
   }
 };
 
